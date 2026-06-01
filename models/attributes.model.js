@@ -10,6 +10,7 @@ const attributeSchema = new mongoose.Schema(
     subCategory: { type: mongoose.Schema.Types.ObjectId, ref: "SubCategory" },
     key: { type: String, required: true, lowercase: true, trim: true },
     label: { type: String, required: true, trim: true },
+    domain: { type: String, required: true, trim: true, lowercase: true },
     type: {
       type: String,
       enum: [

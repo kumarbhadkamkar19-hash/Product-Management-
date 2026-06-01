@@ -3,15 +3,20 @@ const generateSlug = require("../utils/generateSlug");
 
 const categorySchema = new mongoose.Schema(
   {
+    domain: {
+      type: String,
+      required: [true, "Domain is required"],
+      lowercase: true,
+      trim: true,
+      index: true,
+    },
     name: {
       type: String,
       required: [true, "Category name is required"],
       trim: true,
-      unique: true,
     },
     slug: {
       type: String,
-      unique: true,
       lowercase: true,
       trim: true,
     },
@@ -28,7 +33,10 @@ const categorySchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-// async pre-save — no callback needed
+//  domain + name unique together (different domains can have same category name)
+categorySchema.index({ domain: 1, name: 1 }, { unique: true });
+categorySchema.index({ domain: 1, slug: 1 }, { unique: true });
+
 categorySchema.pre("save", async function () {
   if (this.isModified("name")) {
     this.slug = generateSlug(this.name);

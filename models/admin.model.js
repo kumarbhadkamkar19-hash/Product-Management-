@@ -31,7 +31,7 @@ const adminSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
-    
+     
     address: {
       type: String,
       trim: true,
@@ -45,7 +45,7 @@ const adminSchema = new mongoose.Schema(
       trim: true,
       match: [/^[a-z0-9.-]+\.[a-z]{2,}$/, "Please enter a valid domain"],
     },
-
+    
     password: {
       type: String,
       required: [true, "Password is required"],

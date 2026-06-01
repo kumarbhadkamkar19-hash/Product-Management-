@@ -8,6 +8,13 @@ const subCategorySchema = new mongoose.Schema(
       ref: "Category",
       required: true,
     },
+    domain: {
+      type: String,
+      required: [true, "Domain is required"],
+      lowercase: true,
+      trim: true,
+      index: true, // ✅ fast query sathi
+    },
     name: { type: String, required: true, trim: true },
     slug: { type: String, unique: true, lowercase: true, trim: true },
     status: { type: String, enum: ["active", "inactive"], default: "active" },

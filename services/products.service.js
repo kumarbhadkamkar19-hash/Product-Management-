@@ -1,10 +1,10 @@
 const Product = require("../models/products.model");
 const Category = require("../models/categories.model");
 const SubCategory = require("../models/subCategories.model");
-const Image = require("../models/images.model");
+const { getDomain, createError } = require("../utils/domain.helper");
 
 class ProductService {
-  _buildPopulate() {
+  _populate() {
     return [
       { path: "category", select: "name slug" },
       { path: "subCategory", select: "name slug" },
@@ -12,21 +12,23 @@ class ProductService {
     ];
   }
 
-  async getProducts({ page = 1, limit = 12, status, category, subCategory, search, sortBy = "createdAt", order = "desc" } = {}) {
-    const query = { isDeleted: false };
+  async getProducts(adminId, { page = 1, limit = 12, status, category, subCategory, search, sortBy = "createdAt", order = "desc" } = {}) {
+    const domain = await getDomain(adminId);
+
+    const query = { domain, isDeleted: false };
     if (status) query.status = status;
     if (category) query.category = category;
     if (subCategory) query.subCategory = subCategory;
     if (search) query.title = { $regex: search, $options: "i" };
 
-    const sortOrder = order === "asc" ? 1 : -1;
     const allowedSort = ["createdAt", "rank", "title"];
     const sortField = allowedSort.includes(sortBy) ? sortBy : "createdAt";
+    const sortOrder = order === "asc" ? 1 : -1;
 
     const skip = (page - 1) * limit;
     const [data, total] = await Promise.all([
       Product.find(query)
-        .populate(this._buildPopulate())
+        .populate(this._populate())
         .sort({ [sortField]: sortOrder })
         .skip(skip)
         .limit(Number(limit)),
@@ -39,55 +41,62 @@ class ProductService {
     };
   }
 
-  async getProduct(id) {
-    const product = await Product.findOne({ _id: id, isDeleted: false }).populate(this._buildPopulate());
-    if (!product) throw { status: 404, message: "Product not found" };
+  async getProduct(id, adminId) {
+    const domain = await getDomain(adminId);
+
+    const product = await Product.findOne({ _id: id, domain, isDeleted: false }).populate(this._populate());
+    if (!product) throw createError(404, "Product not found");
     return product;
   }
 
-  async createProduct(data) {
+  async createProduct(data, adminId) {
+    const domain = await getDomain(adminId);
+
     const [category, subCategory] = await Promise.all([
-      Category.findOne({ _id: data.category, isDeleted: false, status: "active" }),
-      SubCategory.findOne({ _id: data.subCategory, isDeleted: false, status: "active" }),
+      Category.findOne({ _id: data.category, domain, isDeleted: false, status: "active" }),
+      SubCategory.findOne({ _id: data.subCategory, domain, isDeleted: false, status: "active" }),
     ]);
 
-    if (!category) throw { status: 404, message: "Active category not found" };
-    if (!subCategory) throw { status: 404, message: "Active subCategory not found" };
+    if (!category) throw createError(404, "Active category not found in your domain");
+    if (!subCategory) throw createError(404, "Active subCategory not found in your domain");
     if (String(subCategory.category) !== String(data.category)) {
-      throw { status: 400, message: "SubCategory does not belong to the given category" };
+      throw createError(400, "SubCategory does not belong to the given category");
     }
 
-    const product = new Product(data);
+    const product = new Product({ ...data, domain });
     await product.save();
-    await product.populate(this._buildPopulate());
+    await product.populate(this._populate());
     return product;
   }
 
-  async updateProduct(id, data) {
-    const product = await Product.findOne({ _id: id, isDeleted: false });
-    if (!product) throw { status: 404, message: "Product not found" };
+  async updateProduct(id, data, adminId) {
+    const domain = await getDomain(adminId);
 
-    // Validate category/subCategory relationship if either is being updated
+    const product = await Product.findOne({ _id: id, domain, isDeleted: false });
+    if (!product) throw createError(404, "Product not found");
+
     if (data.category || data.subCategory) {
       const categoryId = data.category || product.category;
       const subCategoryId = data.subCategory || product.subCategory;
 
-      const sub = await SubCategory.findOne({ _id: subCategoryId, isDeleted: false });
-      if (!sub) throw { status: 404, message: "SubCategory not found" };
+      const sub = await SubCategory.findOne({ _id: subCategoryId, domain, isDeleted: false });
+      if (!sub) throw createError(404, "SubCategory not found");
       if (String(sub.category) !== String(categoryId)) {
-        throw { status: 400, message: "SubCategory does not belong to the given category" };
+        throw createError(400, "SubCategory does not belong to the given category");
       }
     }
 
     Object.assign(product, data);
     await product.save();
-    await product.populate(this._buildPopulate());
+    await product.populate(this._populate());
     return product;
   }
 
-  async deleteProduct(id) {
-    const product = await Product.findOne({ _id: id, isDeleted: false });
-    if (!product) throw { status: 404, message: "Product not found" };
+  async deleteProduct(id, adminId) {
+    const domain = await getDomain(adminId);
+
+    const product = await Product.findOne({ _id: id, domain, isDeleted: false });
+    if (!product) throw createError(404, "Product not found");
 
     product.isDeleted = true;
     product.status = "draft";

@@ -17,7 +17,7 @@ app.use(express.urlencoded({ limit: "50mb", extended: true }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 connectDB();
-
+  
 app.use("/api/admin", adminRoutes);
 app.use("/api/categories", require("./routes/categories.routes"));
 app.use("/api/sub-categories", require("./routes/subCategories.routes"));
