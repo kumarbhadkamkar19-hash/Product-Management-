@@ -33,10 +33,10 @@ const attributeSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-attributeSchema.index({ category: 1, key: 1 }, { unique: true });
+attributeSchema.index({ category: 1, key: 1 }, { unique: false, sparse: true });
 attributeSchema.index(
   { subCategory: 1, key: 1 },
-  { unique: true, sparse: true },
+  { unique: false, sparse: true },
 );
 
 module.exports = mongoose.model("Attribute", attributeSchema);

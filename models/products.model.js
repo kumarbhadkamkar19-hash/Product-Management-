@@ -25,7 +25,7 @@ const productSchema = new mongoose.Schema(
       required: [true, "Product title is required"],
       trim: true,
     },
-    slug: { type: String, unique: true, lowercase: true },
+    slug: { type: String, unique: false, lowercase: true },
 
     images: {
       type: [{ type: mongoose.Schema.Types.ObjectId, ref: "Image" }],

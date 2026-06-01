@@ -16,7 +16,7 @@ const subCategorySchema = new mongoose.Schema(
       index: true, // ✅ fast query sathi
     },
     name: { type: String, required: true, trim: true },
-    slug: { type: String, unique: true, lowercase: true, trim: true },
+    slug: { type: String, unique: false, lowercase: true, trim: true },
     status: { type: String, enum: ["active", "inactive"], default: "active" },
     isDeleted: { type: Boolean, default: false },
   },
