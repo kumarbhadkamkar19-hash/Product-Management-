@@ -6,8 +6,10 @@ const validator = require("../validators/subCategories.validator");
 
 const router = express.Router();
 
+// subCategories.routes.js
 router.get(
   "/:categoryId",
+  protect, // ← हे add कर
   validator.paramValidation,
   validate,
   controller.getSubCategories,

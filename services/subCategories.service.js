@@ -3,14 +3,33 @@ const Category = require("../models/categories.model");
 const { getDomain, createError } = require("../utils/domain.helper");
 
 class SubCategoryService {
-  async getSubCategories(categoryId, adminId, { page = 1, limit = 10, status, search } = {}) {
-    const domain = await getDomain(adminId);
+  // subCategories.service.js — getSubCategories method
+  async getSubCategories(
+    categoryId,
+    adminId,
+    { page = 1, limit = 10, status, search } = {},
+  ) {
+    let query = { category: categoryId, isDeleted: false };
 
-    // Category domain ownership check
-    const category = await Category.findOne({ _id: categoryId, domain, isDeleted: false });
-    if (!category) throw createError(404, "Category not found");
+    if (adminId) {
+      // Admin आहे → domain filter लाव
+      const domain = await getDomain(adminId);
+      const category = await Category.findOne({
+        _id: categoryId,
+        domain,
+        isDeleted: false,
+      });
+      if (!category) throw createError(404, "Category not found");
+      query.domain = domain;
+    } else {
+      // Public request → फक्त category check
+      const category = await Category.findOne({
+        _id: categoryId,
+        isDeleted: false,
+      });
+      if (!category) throw createError(404, "Category not found");
+    }
 
-    const query = { category: categoryId, domain, isDeleted: false };
     if (status) query.status = status;
     if (search) query.name = { $regex: search, $options: "i" };
 
@@ -26,20 +45,44 @@ class SubCategoryService {
 
     return {
       data,
-      pagination: { total, page: Number(page), limit: Number(limit), pages: Math.ceil(total / limit) },
+      pagination: {
+        total,
+        page: Number(page),
+        limit: Number(limit),
+        pages: Math.ceil(total / limit),
+      },
     };
   }
-
   async createSubCategory({ category: categoryId, name, status }, adminId) {
     const domain = await getDomain(adminId);
 
-    const category = await Category.findOne({ _id: categoryId, domain, isDeleted: false, status: "active" });
-    if (!category) throw createError(404, "Active category not found in your domain");
+    const category = await Category.findOne({
+      _id: categoryId,
+      domain,
+      isDeleted: false,
+      status: "active",
+    });
+    if (!category)
+      throw createError(404, "Active category not found in your domain");
 
-    const existing = await SubCategory.findOne({ category: categoryId, domain, name, isDeleted: false });
-    if (existing) throw createError(409, "SubCategory with this name already exists in this category");
+    const existing = await SubCategory.findOne({
+      category: categoryId,
+      domain,
+      name,
+      isDeleted: false,
+    });
+    if (existing)
+      throw createError(
+        409,
+        "SubCategory with this name already exists in this category",
+      );
 
-    const subCategory = new SubCategory({ category: categoryId, name, status, domain });
+    const subCategory = new SubCategory({
+      category: categoryId,
+      name,
+      status,
+      domain,
+    });
     await subCategory.save();
     await subCategory.populate("category", "name slug");
     return subCategory;
@@ -48,7 +91,11 @@ class SubCategoryService {
   async updateSubCategory(id, data, adminId) {
     const domain = await getDomain(adminId);
 
-    const subCategory = await SubCategory.findOne({ _id: id, domain, isDeleted: false });
+    const subCategory = await SubCategory.findOne({
+      _id: id,
+      domain,
+      isDeleted: false,
+    });
     if (!subCategory) throw createError(404, "SubCategory not found");
 
     if (data.name && data.name !== subCategory.name) {
@@ -59,7 +106,8 @@ class SubCategoryService {
         isDeleted: false,
         _id: { $ne: id },
       });
-      if (duplicate) throw createError(409, "SubCategory with this name already exists");
+      if (duplicate)
+        throw createError(409, "SubCategory with this name already exists");
     }
 
     Object.assign(subCategory, data);
@@ -71,7 +119,11 @@ class SubCategoryService {
   async deleteSubCategory(id, adminId) {
     const domain = await getDomain(adminId);
 
-    const subCategory = await SubCategory.findOne({ _id: id, domain, isDeleted: false });
+    const subCategory = await SubCategory.findOne({
+      _id: id,
+      domain,
+      isDeleted: false,
+    });
     if (!subCategory) throw createError(404, "SubCategory not found");
 
     subCategory.isDeleted = true;
