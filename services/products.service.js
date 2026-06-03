@@ -11,35 +11,12 @@ class ProductService {
       { path: "images", select: "url alt isPrimary publicId" },
     ];
   }
-  async getProducts(
-    adminId,
-    {
-      page = 1,
-      limit = 12,
-      status,
-      category,
-      subCategory,
-      search,
-      sortBy = "createdAt",
-      order = "desc",
-    } = {},
-  ) {
-    let domain;
 
-    if (adminId) {
-      domain = await getDomain(adminId);
-    } else {
-      // Public — category वरून domain काढ
-      if (category) {
-        const cat = await Category.findById(category).select("domain");
-        if (!cat) throw createError(404, "Category not found");
-        domain = cat.domain;
-      } else {
-        throw createError(400, "categoryId required for public access");
-      }
-    }
+  async getProducts(adminId, { page = 1, limit = 12, status, category, subCategory, search, sortBy = "createdAt", order = "desc" } = {}) {
+    const domain = await getDomain(adminId);
 
-    const query = { domain, isDeleted: false, status: "active" }; // public ला फक्त active
+    const query = { domain, isDeleted: false };
+    if (status) query.status = status;
     if (category) query.category = category;
     if (subCategory) query.subCategory = subCategory;
     if (search) query.title = { $regex: search, $options: "i" };
@@ -60,35 +37,14 @@ class ProductService {
 
     return {
       data,
-      pagination: {
-        total,
-        page: Number(page),
-        limit: Number(limit),
-        pages: Math.ceil(total / limit),
-      },
+      pagination: { total, page: Number(page), limit: Number(limit), pages: Math.ceil(total / limit) },
     };
   }
 
   async getProduct(id, adminId) {
-    let domain;
+    const domain = await getDomain(adminId);
 
-    if (adminId) {
-      domain = await getDomain(adminId);
-    } else {
-      // Public — product च्या domain वर trust कर
-      const product = await Product.findOne({
-        _id: id,
-        isDeleted: false,
-      }).populate(this._populate());
-      if (!product) throw createError(404, "Product not found");
-      return product;
-    }
-
-    const product = await Product.findOne({
-      _id: id,
-      domain,
-      isDeleted: false,
-    }).populate(this._populate());
+    const product = await Product.findOne({ _id: id, domain, isDeleted: false }).populate(this._populate());
     if (!product) throw createError(404, "Product not found");
     return product;
   }
@@ -97,29 +53,14 @@ class ProductService {
     const domain = await getDomain(adminId);
 
     const [category, subCategory] = await Promise.all([
-      Category.findOne({
-        _id: data.category,
-        domain,
-        isDeleted: false,
-        status: "active",
-      }),
-      SubCategory.findOne({
-        _id: data.subCategory,
-        domain,
-        isDeleted: false,
-        status: "active",
-      }),
+      Category.findOne({ _id: data.category, domain, isDeleted: false, status: "active" }),
+      SubCategory.findOne({ _id: data.subCategory, domain, isDeleted: false, status: "active" }),
     ]);
 
-    if (!category)
-      throw createError(404, "Active category not found in your domain");
-    if (!subCategory)
-      throw createError(404, "Active subCategory not found in your domain");
+    if (!category) throw createError(404, "Active category not found in your domain");
+    if (!subCategory) throw createError(404, "Active subCategory not found in your domain");
     if (String(subCategory.category) !== String(data.category)) {
-      throw createError(
-        400,
-        "SubCategory does not belong to the given category",
-      );
+      throw createError(400, "SubCategory does not belong to the given category");
     }
 
     const product = new Product({ ...data, domain });
@@ -131,28 +72,17 @@ class ProductService {
   async updateProduct(id, data, adminId) {
     const domain = await getDomain(adminId);
 
-    const product = await Product.findOne({
-      _id: id,
-      domain,
-      isDeleted: false,
-    });
+    const product = await Product.findOne({ _id: id, domain, isDeleted: false });
     if (!product) throw createError(404, "Product not found");
 
     if (data.category || data.subCategory) {
       const categoryId = data.category || product.category;
       const subCategoryId = data.subCategory || product.subCategory;
 
-      const sub = await SubCategory.findOne({
-        _id: subCategoryId,
-        domain,
-        isDeleted: false,
-      });
+      const sub = await SubCategory.findOne({ _id: subCategoryId, domain, isDeleted: false });
       if (!sub) throw createError(404, "SubCategory not found");
       if (String(sub.category) !== String(categoryId)) {
-        throw createError(
-          400,
-          "SubCategory does not belong to the given category",
-        );
+        throw createError(400, "SubCategory does not belong to the given category");
       }
     }
 
@@ -165,11 +95,7 @@ class ProductService {
   async deleteProduct(id, adminId) {
     const domain = await getDomain(adminId);
 
-    const product = await Product.findOne({
-      _id: id,
-      domain,
-      isDeleted: false,
-    });
+    const product = await Product.findOne({ _id: id, domain, isDeleted: false });
     if (!product) throw createError(404, "Product not found");
 
     product.isDeleted = true;
