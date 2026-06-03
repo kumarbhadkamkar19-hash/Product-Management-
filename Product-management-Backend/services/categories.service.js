@@ -19,6 +19,7 @@ class CategoryService {
   async create(data, adminId) {
     const domain = await this._getDomain(adminId);
 
+    // Active duplicate check
     const existing = await Category.findOne({
       domain,
       name: data.name,
@@ -26,6 +27,19 @@ class CategoryService {
     });
     if (existing)
       throw createError(409, "Category with this name already exists");
+
+    // Deleted असेल तर restore कर
+    const deleted = await Category.findOne({
+      domain,
+      name: data.name,
+      isDeleted: true,
+    });
+    if (deleted) {
+      deleted.isDeleted = false;
+      deleted.status = data.status || "active";
+      await deleted.save();
+      return deleted;
+    }
 
     // Unique slug
     let slug = generateSlug(data.name);
@@ -35,8 +49,7 @@ class CategoryService {
     const category = new Category({ ...data, domain, slug });
     await category.save();
     return category;
-  }
-
+  }git add .
   async getAll(adminId, { page = 1, limit = 10, status, search } = {}) {
     const domain = await this._getDomain(adminId);
 
