@@ -6,8 +6,8 @@ const validator = require('../validators/products.validator');
 
 const router = express.Router();
 
-router.get('/', controller.getProducts);
-router.get('/:id', validator.paramValidation, controller.getProduct);
+router.get('/', controller.getProducts);           // public राहू दे
+router.get('/:id', validator.paramValidation, controller.getProduct); // public राहू दे
 router.post('/', protect, validator.createProductValidation, controller.createProduct);
 router.put('/:id', protect, validator.updateProductValidation, controller.updateProduct);
 router.delete('/:id', protect, validator.paramValidation, controller.deleteProduct);
