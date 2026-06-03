@@ -4,7 +4,10 @@ const SubCategory = require("../models/subCategories.model");
 const { getDomain, createError } = require("../utils/domain.helper");
 
 class AttributeService {
-  async getAttributes(adminId, { categoryId, subCategoryId, page = 1, limit = 20 } = {}) {
+  async getAttributes(
+    adminId,
+    { categoryId, subCategoryId, page = 1, limit = 20 } = {},
+  ) {
     const domain = await getDomain(adminId);
 
     const query = { domain };
@@ -24,15 +27,27 @@ class AttributeService {
 
     return {
       data,
-      pagination: { total, page: Number(page), limit: Number(limit), pages: Math.ceil(total / limit) },
+      pagination: {
+        total,
+        page: Number(page),
+        limit: Number(limit),
+        pages: Math.ceil(total / limit),
+      },
     };
   }
-
-  // Dynamic form render sathi
   async getFilteredAttributes(adminId, { categoryId, subCategoryId }) {
     if (!categoryId) throw createError(400, "categoryId is required");
 
-    const domain = await getDomain(adminId);
+    let domain;
+
+    if (adminId) {
+      domain = await getDomain(adminId);
+    } else {
+      // Public request — category वरून domain घे
+      const category = await Category.findById(categoryId).select("domain");
+      if (!category) throw createError(404, "Category not found");
+      domain = category.domain;
+    }
 
     const query = { domain, category: categoryId };
     if (subCategoryId) {
@@ -44,16 +59,23 @@ class AttributeService {
     const attributes = await Attribute.find(query).sort({ label: 1 });
     return attributes;
   }
-
   async createAttribute(data, adminId) {
     const domain = await getDomain(adminId);
 
     // Category domain check
-    const category = await Category.findOne({ _id: data.category, domain, isDeleted: false });
+    const category = await Category.findOne({
+      _id: data.category,
+      domain,
+      isDeleted: false,
+    });
     if (!category) throw createError(404, "Category not found in your domain");
 
     if (data.subCategory) {
-      const sub = await SubCategory.findOne({ _id: data.subCategory, domain, isDeleted: false });
+      const sub = await SubCategory.findOne({
+        _id: data.subCategory,
+        domain,
+        isDeleted: false,
+      });
       if (!sub) throw createError(404, "SubCategory not found in your domain");
     }
 
@@ -78,7 +100,10 @@ class AttributeService {
     if (["select", "radio", "checkbox"].includes(data.type || attribute.type)) {
       const options = data.options ?? attribute.options;
       if (!options || options.length === 0) {
-        throw createError(400, `Options are required for type '${data.type || attribute.type}'`);
+        throw createError(
+          400,
+          `Options are required for type '${data.type || attribute.type}'`,
+        );
       }
     }
 

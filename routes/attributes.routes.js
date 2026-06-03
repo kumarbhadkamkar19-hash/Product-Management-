@@ -1,24 +1,25 @@
-const express = require('express');
-const { protect } = require('../middlewares/auth.middleware');
-const validate = require('../middlewares/validate.middleware');
+const express = require("express");
+const { protect } = require("../middlewares/auth.middleware");
+const validate = require("../middlewares/validate.middleware");
 
-const controller = require('../controllers/attributes.controller');
-const validator = require('../validators/attributes.validator');
+const controller = require("../controllers/attributes.controller");
+const validator = require("../validators/attributes.validator");
 
 const router = express.Router();
-
 router.get(
   "/",
+  protect, // ← add
   validator.filterValidation,
   validate,
-  controller.getAttributes
+  controller.getAttributes,
 );
 
 router.get(
   "/filter",
+  protect, // ← add
   validator.filterValidation,
   validate,
-  controller.getFilteredAttributes
+  controller.getFilteredAttributes,
 );
 
 router.post(
@@ -26,7 +27,7 @@ router.post(
   protect,
   validator.createAttributeValidation,
   validate,
-  controller.createAttribute
+  controller.createAttribute,
 );
 
 router.put(
@@ -34,7 +35,7 @@ router.put(
   protect,
   validator.updateAttributeValidation,
   validate,
-  controller.updateAttribute
+  controller.updateAttribute,
 );
 
 router.delete(
@@ -42,7 +43,7 @@ router.delete(
   protect,
   validator.paramValidation,
   validate,
-  controller.deleteAttribute
+  controller.deleteAttribute,
 );
 
 module.exports = router;
