@@ -33,9 +33,15 @@ const categorySchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-//  domain + name unique together (different domains can have same category name)
-categorySchema.index({ domain: 1, name: 1 }, { unique: true });
-categorySchema.index({ domain: 1, slug: 1 }, { unique: true });
+// ✅ फक्त isDeleted: false records मध्ये unique check
+categorySchema.index(
+  { domain: 1, name: 1 },
+  { unique: true, partialFilterExpression: { isDeleted: false } },
+);
+categorySchema.index(
+  { domain: 1, slug: 1 },
+  { unique: true, partialFilterExpression: { isDeleted: false } },
+);
 
 categorySchema.pre("save", async function () {
   if (this.isModified("name")) {

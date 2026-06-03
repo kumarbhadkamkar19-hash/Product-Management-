@@ -49,7 +49,7 @@ class CategoryService {
     const category = new Category({ ...data, domain, slug });
     await category.save();
     return category;
-  }git add .
+  }
   async getAll(adminId, { page = 1, limit = 10, status, search } = {}) {
     const domain = await this._getDomain(adminId);
 
