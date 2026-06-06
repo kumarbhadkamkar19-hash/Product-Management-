@@ -24,7 +24,7 @@ app.use("/api/sub-categories", require("./routes/subCategories.routes"));
 app.use("/api/attributes", require("./routes/attributes.routes"));
 app.use("/api/products", require("./routes/products.routes"));
 app.use("/api/images", require("./routes/images.routes"));
-
+app.use("/api/enquiry", require("./routes/contactEnquiry.routes"));
 app.get("/", (req, res) => {
   res.send("🚀 API is running successfully...");
 });

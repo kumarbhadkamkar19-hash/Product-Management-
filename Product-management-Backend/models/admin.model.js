@@ -7,7 +7,7 @@ const adminSchema = new mongoose.Schema(
       required: [true, "Mobile number is required"],
       trim: true,
     },
-
+     
     email: {
       type: String,
       required: [true, "Email is required"],
@@ -31,12 +31,12 @@ const adminSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
-     
+
     address: {
       type: String,
       trim: true,
     },
-    
+
     domain: {
       type: String,
       required: [true, "Domain is required"],
@@ -45,14 +45,14 @@ const adminSchema = new mongoose.Schema(
       trim: true,
       match: [/^[a-z0-9.-]+\.[a-z]{2,}$/, "Please enter a valid domain"],
     },
-    
+
     password: {
       type: String,
       required: [true, "Password is required"],
       select: false,
       minlength: [6, "Password must be at least 6 characters"],
     },
-    
+
     resetPasswordToken: String,
     resetPasswordExpires: Date,
   },
